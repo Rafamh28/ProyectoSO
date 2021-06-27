@@ -28,6 +28,10 @@ public:
     Connection();
     bool ejecucion();
     int registrar(char * username, char * email, char * pass); //1 se registro 0 no se registro 
+    int logear(char *emial,char *pass);  // Devuelve 0 en error o contraseña incorrecta, 1 con contraseña correcta
+    int agregarProducto(char *name,char *brand, int amount,float presio,char * producer); 
+    bool mostrarProductos();
+    int actualizarProducto(int id, char *name,char *brand, int amount,float presio,char * producer); 
 };
 
 Connection::Connection()
@@ -54,7 +58,7 @@ bool Connection::ejecucion()
             return false;
         }
 
-        if (mysql_query(CONN, "Select * from Products"))
+        if (mysql_query(CONN, "INSERT INTO Users (username, email, password) VALUES (\"cliente\" ,\"cliente@gmail.com\" ,\"123456\" )"))
         {
             cerr << mysql_error(CONN) << endl;
             return false;
@@ -82,11 +86,17 @@ bool Connection::ejecucion()
     }
 }
 
+
 int Connection::registrar(char * username, char * email, char * pass){
     try
     {
         CONN = mysql_init(NULL);
-        char * consulta = "INSERT INTO Users (username, email, password) VALUES ( ?, ?, ?)";
+
+        string username_str(username);
+        string email_str(email);
+        string pass_str(pass);
+
+        string consulta = "INSERT INTO Users (username, email, password) VALUES (\""+username_str+"\",\""+email_str+"\",\""+pass_str+"\")";
         
         if (!mysql_real_connect(CONN, HOSTNAME, USERNAME, PASSWORD, DATABASE, PORT, SOCKET, 0))
         {
@@ -94,55 +104,12 @@ int Connection::registrar(char * username, char * email, char * pass){
             return 0;
         }
 
-        int result; 
-        // unsigned long count; 
+        if (mysql_query(CONN, consulta.c_str()))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return 0;
+        }
 
-        MYSQL_STMT * stmt = mysql_stmt_init(CONN); 
-        if (stmt == NULL) return 0;
-
-        result = mysql_stmt_prepare(stmt, consulta, strlen(consulta));  
-        if (result != 0) return 0; 
-
-
-        int count = mysql_stmt_param_count(stmt);
-        printf("there are %d parameters in the insert statements\n", count); 
-
-        MYSQL_BIND bind[3]; //3 parametros en el statement
-
-        unsigned int array_size = 1; //una sola fila se insertara
-        unsigned long username_len = strlen(username); 
-        unsigned long email_len = strlen(email); 
-        unsigned long pass_len = strlen(pass);
-
-        memset(bind, 0, sizeof(MYSQL_BIND)*3);
-
-        bind[0].buffer_type = MYSQL_TYPE_STRING; 
-        bind[0].buffer = username;
-        bind[0].buffer_length = strlen(username); 
-        bind[0].length = &username_len;
-
-        bind[1].buffer_type = MYSQL_TYPE_STRING; 
-        bind[1].buffer = email;
-        bind[1].buffer_length = strlen(email); 
-        bind[1].length = &email_len;
-
-        bind[2].buffer_type = MYSQL_TYPE_STRING; 
-        bind[2].buffer = pass;
-        bind[2].buffer_length = strlen(pass); 
-        bind[2].length = &pass_len; 
-
-        mysql_stmt_attr_set(stmt, STMT_ATTR_ARRAY_SIZE, &array_size);
-
-        result = mysql_stmt_bind_param(stmt, bind);
-
-        if (result != 0) return 0;
-
-        result = mysql_stmt_execute(stmt); //El error esta aqui que ladillaaaaaaaaaa
-    
-
-        if (result != 0) return 0;        
-
-        mysql_stmt_close(stmt);
      
         mysql_close(CONN);
 
@@ -155,12 +122,170 @@ int Connection::registrar(char * username, char * email, char * pass){
     }
 }
 
+int Connection::logear(char *email,char *pass){
+    try
+    {
+
+        CONN = mysql_init(NULL);
+        
+        if (!mysql_real_connect(CONN, HOSTNAME, USERNAME, PASSWORD, DATABASE, PORT, SOCKET, 0))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return 0;
+        }
+
+        string email_str(email);        
+        string consulta = "SELECT * FROM Users WHERE email = \""+email_str+"\"";
+
+        if (mysql_query(CONN, consulta.c_str()))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return 0;
+        }
+
+        RES = mysql_use_result(CONN);
+
+        if(RES == NULL)
+            return 0;
+
+        if((ROW = mysql_fetch_row(RES)) != NULL){            
+            if(strcmp(pass,ROW[3])==0)
+                return 1;
+        }else
+                return 0;
+
+        mysql_free_result(RES);
+
+        mysql_close(CONN);
+
+        return 0;
+    }
+    catch (char *e)
+    {
+        cerr << "[EXECPTION] " << e << endl;
+        return 0;
+    }    
+}
+
+int Connection::agregarProducto(char *name,char *brand,int amount, float presio,char * producer){
+    try
+    {
+        CONN = mysql_init(NULL);
+
+        string name_str(name);
+        string brand_str(brand);
+        string presio_str(to_string(presio));
+        string producer_str(producer);
+        string amount_str(to_string(amount));
+    
+        string consulta = "INSERT INTO Products (name, brand, amount, presio, producer) VALUES (\""+name_str+"\",\""+brand_str+"\",\""+amount_str+"\","+presio_str+",\""+producer_str+"\")";
+        
+        if (!mysql_real_connect(CONN, HOSTNAME, USERNAME, PASSWORD, DATABASE, PORT, SOCKET, 0))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return 0;
+        }
+
+        if (mysql_query(CONN, consulta.c_str()))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return 0;
+        }
+
+        mysql_close(CONN);
+
+        return 1;
+    }
+    catch (char *e)
+    {
+        cerr << "[EXECPTION] " << e << endl;
+        return 0;
+    }
+}
+
+int Connection::actualizarProducto(int id, char *name,char *brand, int amount,float presio,char * producer){
+    try
+    {
+       CONN = mysql_init(NULL);
+
+        string name_str(name);
+        string brand_str(brand);
+        string presio_str(to_string(presio));
+        string producer_str(producer);
+        string amount_str(to_string(amount));
+        string id_str(to_string(id));
+    
+        string consulta = "UPDATE Products SET name=\""+name_str+"\",brand =\""+brand_str+"\",amount ="+amount_str+",presio="+presio_str+",producer=\""+producer_str+"\" WHERE id="+id_str;
+        
+        if (!mysql_real_connect(CONN, HOSTNAME, USERNAME, PASSWORD, DATABASE, PORT, SOCKET, 0))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return 0;
+        }
+
+        if (mysql_query(CONN, consulta.c_str()))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return 0;
+        }
+
+        mysql_close(CONN);
+
+        return 1;
+    }
+    catch (char *e)
+    {
+        cerr << "[EXECPTION] " << e << endl;
+        return 0;
+    }
+}
+
+bool Connection::mostrarProductos(){
+   try
+    {
+
+        CONN = mysql_init(NULL);
+        
+        if (!mysql_real_connect(CONN, HOSTNAME, USERNAME, PASSWORD, DATABASE, PORT, SOCKET, 0))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return false;
+        }
+
+        if (mysql_query(CONN, "SELECT * FROM Products"))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return false;
+        }
+
+        RES = mysql_use_result(CONN);
+
+        cout << "Lista de Productos Disponibles" << endl << endl; 
+
+        while ((ROW = mysql_fetch_row(RES)) != NULL){            
+            cout << "| " << ROW[0] << " | "  << ROW[1] << " | " << ROW[2] << " | " << ROW[3] << " | " << ROW[4] << " | " << ROW[5] << " | " << endl;
+        }
+
+        mysql_free_result(RES);
+
+        mysql_close(CONN);
+
+        return true;
+    }
+    catch (char *e)
+    {
+        cerr << "[EXECPTION] " << e << endl;
+        return false;
+    }  
+}
+
 int main()
 {
     try{
 
     Connection objConn;
-    bool result = objConn.registrar("hola","hola@gmail.com","123456");
+    int result = objConn.actualizarProducto(4,"Pasta Dental","Colgate",8,2500.4,"Colgate Corp");
+    cout << result << endl; 
     if (!result) cout << "ERROR!!!!" <<endl;
 
     } catch (char *e){
