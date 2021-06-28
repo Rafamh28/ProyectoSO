@@ -29,12 +29,12 @@ public:
     bool ejecucion();
     int registrar(char * username, char * email, char * pass); //1 se registro 0 no se registro 
     int logear(char *emial,char *pass);  // Devuelve 0 en error o contraseña incorrecta, 1 con contraseña correcta
-    int agregarProducto(char *name,char *brand, int amount,float presio,char * producer); 
-    bool mostrarProductos();
-    int actualizarProducto(int id, char *name,char *brand, int amount,float presio,char * producer); 
+    int agregarProducto(char *name,char *brand, int amount,float presio,char * producer); // 0 en error, 1 en registro de producto exitoso
+    bool mostrarProductos();  // True en caso de que se muestren los productos, falso en caso de error con la base datos
+    int actualizarProducto(int id, char *name,char *brand, int amount,float presio,char * producer); //
 };
 
-Connection::Connection()
+Connection::Connection() // Esto se encarga de fijar los parametros necesarios para la conexión
 {
 
     HOSTNAME = "sql10.freemysqlhosting.net";
@@ -44,7 +44,7 @@ Connection::Connection()
     SOCKET = NULL;
 }
 
-bool Connection::ejecucion()
+bool Connection::ejecucion() // Esta es una función de prueba
 {
 
     try
@@ -58,7 +58,7 @@ bool Connection::ejecucion()
             return false;
         }
 
-        if (mysql_query(CONN, "INSERT INTO Users (username, email, password) VALUES (\"cliente\" ,\"cliente@gmail.com\" ,\"123456\" )"))
+        if (mysql_query(CONN, "SHOW DATABASES"))
         {
             cerr << mysql_error(CONN) << endl;
             return false;
@@ -87,7 +87,7 @@ bool Connection::ejecucion()
 }
 
 
-int Connection::registrar(char * username, char * email, char * pass){
+int Connection::registrar(char * username, char * email, char * pass){  //Función para el registro del usuario
     try
     {
         CONN = mysql_init(NULL);
@@ -122,7 +122,7 @@ int Connection::registrar(char * username, char * email, char * pass){
     }
 }
 
-int Connection::logear(char *email,char *pass){
+int Connection::logear(char *email,char *pass){  // Función para el loguin del usuario
     try
     {
 
@@ -167,7 +167,7 @@ int Connection::logear(char *email,char *pass){
     }    
 }
 
-int Connection::agregarProducto(char *name,char *brand,int amount, float presio,char * producer){
+int Connection::agregarProducto(char *name,char *brand,int amount, float presio,char * producer){  // Esta función agrega un producto a la lista de productos
     try
     {
         CONN = mysql_init(NULL);
@@ -203,7 +203,7 @@ int Connection::agregarProducto(char *name,char *brand,int amount, float presio,
     }
 }
 
-int Connection::actualizarProducto(int id, char *name,char *brand, int amount,float presio,char * producer){
+int Connection::actualizarProducto(int id, char *name,char *brand, int amount,float presio,char * producer){  // Función que se encarga de actualizar el estado de los productos
     try
     {
        CONN = mysql_init(NULL);
@@ -240,7 +240,7 @@ int Connection::actualizarProducto(int id, char *name,char *brand, int amount,fl
     }
 }
 
-bool Connection::mostrarProductos(){
+bool Connection::mostrarProductos(){  // Muestra una lista de todos los productos de la base de datos 
    try
     {
 
