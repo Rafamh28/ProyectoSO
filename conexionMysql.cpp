@@ -33,6 +33,7 @@ public:
     bool mostrarProductos();  // True en caso de que se muestren los productos, falso en caso de error con la base datos
     int actualizarProducto(int id, char *name,char *brand, int amount,float presio,char * producer, int id_producer); //actualiza los productos
     char * encriptarContra(char * password);
+    int getProducto(int id);
 };
 
 Connection::Connection() // Esto se encarga de fijar los parametros necesarios para la conexión
@@ -183,6 +184,55 @@ int Connection::logear(char *email,char *pass){  // Función para el loguin del 
     }    
 }
 
+int Connection::getProducto(int id){  //traer producto
+    try
+    {
+
+        CONN = mysql_init(NULL);
+        
+        if (!mysql_real_connect(CONN, HOSTNAME, USERNAME, PASSWORD, DATABASE, PORT, SOCKET, 0))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return 0;
+        }
+        string id_str(to_string(id));
+        string consulta = "SELECT * FROM Products WHERE id = "+id_str;
+
+        if (mysql_query(CONN, consulta.c_str()))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return 0;
+        }
+
+        RES = mysql_use_result(CONN);
+
+        if(RES == NULL)
+            return 0;
+
+        if((ROW = mysql_fetch_row(RES)) != NULL){            
+            cout << ROW[0] << endl;  //id
+            cout << ROW[1] << endl;  //name   
+            cout << ROW[2] << endl;  //brand
+            cout << ROW[3] << endl;  //amount   
+            cout << ROW[4] << endl;  //price    
+            cout << ROW[5] << endl;  //producer
+            cout << ROW[6] << endl;  //id_producer   
+        }else
+        return 0;
+
+        mysql_free_result(RES);
+
+        mysql_close(CONN);
+
+        return 1;
+    }
+    catch (char *e)
+    {
+        cerr << "[EXECPTION] " << e << endl;
+        return 0;
+    }    
+}
+
 int Connection::agregarProducto(char *name,char *brand,int amount, float presio,char * producer,int id_producer){  // Esta función agrega un producto a la lista de productos
     try
     {
@@ -302,7 +352,7 @@ int main()
     try{
 
     Connection objConn;
-    int result = objConn.mostrarProductos();
+    int result = objConn.getProducto(1);
     cout << result << endl; 
     if (!result) cout << "ERROR!!!!" <<endl;
 
