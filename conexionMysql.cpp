@@ -35,7 +35,17 @@ public:
     int actualizarProducto(int id, char *name,char *brand, int amount,float presio,char * producer, int id_producer); //actualiza los productos
     char * encriptarContra(char * password);
     int getProducto(int id,Producto * ptr_producto);
+    int getPrecio(int id);
+    int getAmount(int id);
+    int actualizarCantidad(int id, int amount);
+
 };
+    //Prototipos de las funciones
+    void hacerPedido();
+    void mostrarCatalogo();
+    int comprobarProducto(int id);
+    int restarEnAlmacen(int id, int cant);
+    int precioProductos(int id, int cant);
 
 Connection::Connection() // Esto se encarga de fijar los parametros necesarios para la conexión
 {
@@ -312,7 +322,6 @@ int Connection::actualizarProducto(int id, char *name,char *brand, int amount,fl
 bool Connection::mostrarProductos(){  // Muestra una lista de todos los productos de la base de datos 
    try
     {
-
         CONN = mysql_init(NULL);
         
         if (!mysql_real_connect(CONN, HOSTNAME, USERNAME, PASSWORD, DATABASE, PORT, SOCKET, 0))
@@ -348,18 +357,230 @@ bool Connection::mostrarProductos(){  // Muestra una lista de todos los producto
     }  
 }
 
-int main()
-{
+int Connection::getPrecio(int id){ //Retorna el precio del producto con el id dado
+    int precio;
+     try
+    {
+
+        CONN = mysql_init(NULL);
+        
+        if (!mysql_real_connect(CONN, HOSTNAME, USERNAME, PASSWORD, DATABASE, PORT, SOCKET, 0))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return 0;
+        }
+        string id_str(to_string(id));
+        string consulta = "SELECT * FROM Products WHERE id = "+id_str;
+
+        if (mysql_query(CONN, consulta.c_str()))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return 0;
+        }
+
+        RES = mysql_use_result(CONN);
+
+        if(RES == NULL)
+            return 0;
+
+        if((ROW = mysql_fetch_row(RES)) != NULL){            
+            precio = atoi( ROW[4]);  //price
+        }else
+        return 0;
+
+        mysql_free_result(RES);
+
+        mysql_close(CONN);
+
+        return precio;
+    }
+    catch (char *e)
+    {
+        cerr << "[EXECPTION] " << e << endl;
+        return 0;
+    }  
+}
+
+int Connection::getAmount(int id){  //Retorna la cantidad que hay del producto con el id dado
+    int cantidad;
+     try
+    {
+
+        CONN = mysql_init(NULL);
+        
+        if (!mysql_real_connect(CONN, HOSTNAME, USERNAME, PASSWORD, DATABASE, PORT, SOCKET, 0))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return 0;
+        }
+        string id_str(to_string(id));
+        string consulta = "SELECT * FROM Products WHERE id = "+id_str;
+
+        if (mysql_query(CONN, consulta.c_str()))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return 0;
+        }
+
+        RES = mysql_use_result(CONN);
+
+        if(RES == NULL)
+            return 0;
+
+        if((ROW = mysql_fetch_row(RES)) != NULL){            
+            cantidad = atoi( ROW[3]);  //amount
+        }else
+        return 0;
+
+        mysql_free_result(RES);
+
+        mysql_close(CONN);
+
+        return cantidad;
+    }
+    catch (char *e)
+    {
+        cerr << "[EXECPTION] " << e << endl;
+        return 0;
+    }  
+}
+
+int Connection::actualizarCantidad(int id, int amount){  // Función que se encarga de actualizar la cantidad de los productos
+    try
+    {
+       CONN = mysql_init(NULL);
+
+        int new_amount = getAmount(id) - amount;
+        string amount_str(to_string(new_amount));
+        string id_str(to_string(id));
+    
+        string consulta = "UPDATE Products SET amount ="+amount_str+" WHERE id="+id_str;
+
+        
+        if (!mysql_real_connect(CONN, HOSTNAME, USERNAME, PASSWORD, DATABASE, PORT, SOCKET, 0))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return 0;
+        }
+
+        if (mysql_query(CONN, consulta.c_str()))
+        {
+            cerr << mysql_error(CONN) << endl;
+            return 0;
+        }
+
+        mysql_close(CONN);
+
+        return 1;
+    }
+    catch (char *e)
+    {
+        cerr << "[EXECPTION] " << e << endl;
+        return 0;
+    }
+}
+
+int precioProductos(int id, int cant){  //Retorna la cantidad a pagar por una cantidad dada de un producto dado
+    try{
+        Connection objConn;
+        int result = objConn.getPrecio(id);
+        if (!result) cout << "ERROR!!!!" <<endl;
+        return (result*cant);  //precio*cantidad
+        } catch (char *e){
+            cerr << "[EXECPTION] " << e << endl;
+            return 0;
+        }
+}
+
+int comprobarProducto(int id){  //Comprueba si existe el producto con la id dada
     try{
     Producto product;    
     Connection objConn;
     int result = objConn.getProducto(1,&product);
     cout << product.getPrice() << endl;
+    if (!result) cout << "ERROR!!!!" <<endl;
+
+    } catch (char *e){
+        cerr << "[EXECPTION] " << e << endl;
+        return 0;
+    }
+    return 1;
+}
+
+int restarEnAlmacen(int id, int cant){  //Resta en almacen la cantidad que hay del producto con la cantidad dada
+    try{
+
+    Connection objConn;
+    int result = objConn.actualizarCantidad(id,cant);
+    if (!result) cout << "ERROR!!!!" <<endl;
+
+    } catch (char *e){
+        cerr << "[EXECPTION] " << e << endl;
+        return 0;
+    }
+    return 1;
+}
+
+void hacerPedido(){  //Cliente hace el pedido
+    int id, cant, total=0;
+    
+    char res;
+    bool repetir = true;
+    system("clear");
+    cout << "------ HACER PEDIDO -----" << endl << endl;
+
+    do {
+        mostrarCatalogo();
+        do
+        {
+            cout << "\n------ Ingrese ID del producto a comprar -----" << endl;
+            cin >> id;
+        } while (comprobarProducto(id)!=1);
+
+        cout << "\n------ Ingrese cantidad del producto a comprar -----" << endl;
+        cin >> cant;
+        restarEnAlmacen(id,cant);
+        total = total + precioProductos(id,cant);
+
+        cout << "\n------ ¿Desea agregar otro producto al pedido? S/N  -----" << endl;
+        cin >> res;
+        switch (toupper(res))
+        {
+        case 'S':
+            break;
+
+        case 'N':
+            repetir = false;
+            break;
+
+        default:
+            cout << "\n------ Opción inválida -----" << endl;
+            break;
+        }
+    } while(repetir);
+
+    cout << "------ TOTAL A PAGAR: "<<total<<" -----" << endl << endl;
+}
+
+void mostrarCatalogo(){  //Lista los productos en almacen
+
+    try{
+
+    Connection objConn;
+    int result = objConn.mostrarProductos();
     cout << result << endl; 
     if (!result) cout << "ERROR!!!!" <<endl;
 
     } catch (char *e){
         cerr << "[EXECPTION] " << e << endl;
     }
+
+}
+
+
+int main()
+{
+    hacerPedido();
+
     return 0;
 }
