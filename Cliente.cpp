@@ -6,47 +6,38 @@
 using namespace std;
 
 
-class Cliente{
+class Usuario{
     string username, email, password;
+    int status;
 
     public:
         //Metodos de los atributos privado.
         void setPassword(string password);
-        string getPassword();
         void setUsername(string username);
-        string getUsername();
         void setEmail(string email);
-        string getEmail();
+        void setStatus(int status);
 
         //Metodos de la clase cliente
         int infoRegistro();
 };
 
-void Cliente::setPassword(string password){
+void Usuario::setPassword(string password){
     this->password = password;
 }
 
-string Cliente::getPassword(){
-    return this->password;
-}
-
-void Cliente::setUsername(string username){
+void Usuario::setUsername(string username){
     this->username = username;
 }
 
-string Cliente::getUsername(){
-    return this->username;
-}
-
-void Cliente::setEmail(string email){
+void Usuario::setEmail(string email){
     this->email = email;
 }
 
-string Cliente::getEmail(){
-    return this->email;
+void setStatus(int status){
+    this->status = status;
 }
 
-int Cliente::infoRegistro(){
+int Usuario::infoRegistro(){
     string user, pass, passaux, email;
     int status;
 
@@ -71,4 +62,19 @@ int Cliente::infoRegistro(){
     setUsername(user);
     setPassword(pass);
     setEmail(email);
+    cout << "Indique si es Administrador[0], Cliente[1] ó Proveedor[2]: ";
+    cin >> status;
+    switch (status){
+    case 0:
+        setStatus(0);
+        break;
+    case 1:
+        setStatus(1);
+        break;
+    case 2:
+        setStatus(2);
+        break;
+    default:
+        break;
+    }
 }
