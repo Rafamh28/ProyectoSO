@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <mariadb/mysql.h>
-#include <Producto.cpp>
+#include "Producto.cpp"
 
 using namespace std;
 
@@ -34,7 +34,7 @@ public:
     bool mostrarProductos();  // True en caso de que se muestren los productos, falso en caso de error con la base datos
     int actualizarProducto(int id, char *name,char *brand, int amount,float presio,char * producer, int id_producer); //actualiza los productos
     char * encriptarContra(char * password);
-    int getProducto(int id);
+    int getProducto(int id,Producto * ptr_producto);
 };
 
 Connection::Connection() // Esto se encarga de fijar los parametros necesarios para la conexión
@@ -185,7 +185,7 @@ int Connection::logear(char *email,char *pass){  // Función para el loguin del 
     }    
 }
 
-int Connection::getProducto(int id){  //traer producto
+int Connection::getProducto(int id,Producto  *ptr_producto){  //traer producto
     try
     {
 
@@ -211,13 +211,13 @@ int Connection::getProducto(int id){  //traer producto
             return 0;
 
         if((ROW = mysql_fetch_row(RES)) != NULL){            
-            cout << ROW[0] << endl;  //id
-            cout << ROW[1] << endl;  //name   
-            cout << ROW[2] << endl;  //brand
-            cout << ROW[3] << endl;  //amount   
-            cout << ROW[4] << endl;  //price    
-            cout << ROW[5] << endl;  //producer
-            cout << ROW[6] << endl;  //id_producer   
+            ptr_producto->setID(atoi(ROW[0]));  //id
+            ptr_producto->setName(ROW[1]);  //name   
+            ptr_producto->setBrand(ROW[2]);  //brand
+            ptr_producto->setAmount(atoi(ROW[3]));  //amount   
+            ptr_producto->setPrice(atof(ROW[4]));  //price    
+            ptr_producto->setProducer(ROW[5]);  //producer
+            ptr_producto->setID_Producer(ROW[6]);  //id_producer   
         }else
         return 0;
 
@@ -351,9 +351,10 @@ bool Connection::mostrarProductos(){  // Muestra una lista de todos los producto
 int main()
 {
     try{
-
+    Producto product;    
     Connection objConn;
-    int result = objConn.getProducto(1);
+    int result = objConn.getProducto(1,&product);
+    cout << product.getPrice() << endl;
     cout << result << endl; 
     if (!result) cout << "ERROR!!!!" <<endl;
 
