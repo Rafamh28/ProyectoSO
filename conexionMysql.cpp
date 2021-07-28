@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <mariadb/mysql.h>
+#include <Producto.cpp>
 
 using namespace std;
 
