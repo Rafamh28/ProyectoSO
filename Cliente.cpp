@@ -33,7 +33,7 @@ void Usuario::setEmail(string email){
     this->email = email;
 }
 
-void setStatus(int status){
+void Usuario::setStatus(int status){
     this->status = status;
 }
 
