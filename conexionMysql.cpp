@@ -27,20 +27,21 @@ class Connection
 public:
     Connection();
     bool ejecucion();
-    int registrar(char * username, char * email, char * pass); //1 se registro 0 no se registro 
+    int registrar(char * username, char * email, char * pass,int type); //1 se registro 0 no se registro 
     int logear(char *emial,char *pass);  // Devuelve 0 en error o contraseña incorrecta, 1 con contraseña correcta
-    int agregarProducto(char *name,char *brand, int amount,float presio,char * producer); // 0 en error, 1 en registro de producto exitoso
+    int agregarProducto(char *name,char *brand, int amount,float presio,char * producer,int id_producer); // 0 en error, 1 en registro de producto exitoso
     bool mostrarProductos();  // True en caso de que se muestren los productos, falso en caso de error con la base datos
-    int actualizarProducto(int id, char *name,char *brand, int amount,float presio,char * producer); //
+    int actualizarProducto(int id, char *name,char *brand, int amount,float presio,char * producer, int id_producer); //actualiza los productos
+    char * encriptarContra(char * password);
 };
 
 Connection::Connection() // Esto se encarga de fijar los parametros necesarios para la conexión
 {
 
     HOSTNAME = "sql10.freemysqlhosting.net";
-    DATABASE = "sql10420882";
-    USERNAME = "sql10420882";
-    PASSWORD = "te5qkMTUAT";
+    DATABASE = "sql10428138";
+    USERNAME = "sql10428138";
+    PASSWORD = "i58SCBcJtR";
     SOCKET = NULL;
 }
 
@@ -86,17 +87,32 @@ bool Connection::ejecucion() // Esta es una función de prueba
     }
 }
 
+char *Connection::encriptarContra(char * password){
+    if (!password)
+        return nullptr;
 
-int Connection::registrar(char * username, char * email, char * pass){  //Función para el registro del usuario
+    int size = strlen(password);
+    int i = 0;
+    char *str = new char[size + 1]();
+    
+    for (; password[i] != '\0'; i++)
+        str[i] = password[i] + i + 3;
+    str[i] = '\0';
+
+    return str;
+}
+
+int Connection::registrar(char * username, char * email, char * pass,int type){  //Función para el registro del usuario
     try
     {
         CONN = mysql_init(NULL);
 
         string username_str(username);
         string email_str(email);
-        string pass_str(pass);
+        string pass_str(Connection::encriptarContra(pass));
+        string type_str(to_string(type));
 
-        string consulta = "INSERT INTO Users (username, email, password) VALUES (\""+username_str+"\",\""+email_str+"\",\""+pass_str+"\")";
+        string consulta = "INSERT INTO User (username, email, password, user_type) VALUES (\""+username_str+"\",\""+email_str+"\",\""+pass_str+"\","+type_str+")";
         
         if (!mysql_real_connect(CONN, HOSTNAME, USERNAME, PASSWORD, DATABASE, PORT, SOCKET, 0))
         {
@@ -135,7 +151,7 @@ int Connection::logear(char *email,char *pass){  // Función para el loguin del 
         }
 
         string email_str(email);        
-        string consulta = "SELECT * FROM Users WHERE email = \""+email_str+"\"";
+        string consulta = "SELECT * FROM User WHERE email = \""+email_str+"\"";
 
         if (mysql_query(CONN, consulta.c_str()))
         {
@@ -149,7 +165,7 @@ int Connection::logear(char *email,char *pass){  // Función para el loguin del 
             return 0;
 
         if((ROW = mysql_fetch_row(RES)) != NULL){            
-            if(strcmp(pass,ROW[3])==0)
+            if(strcmp(Connection::encriptarContra(pass),ROW[3])==0)
                 return 1;
         }else
                 return 0;
@@ -167,7 +183,7 @@ int Connection::logear(char *email,char *pass){  // Función para el loguin del 
     }    
 }
 
-int Connection::agregarProducto(char *name,char *brand,int amount, float presio,char * producer){  // Esta función agrega un producto a la lista de productos
+int Connection::agregarProducto(char *name,char *brand,int amount, float presio,char * producer,int id_producer){  // Esta función agrega un producto a la lista de productos
     try
     {
         CONN = mysql_init(NULL);
@@ -177,8 +193,9 @@ int Connection::agregarProducto(char *name,char *brand,int amount, float presio,
         string presio_str(to_string(presio));
         string producer_str(producer);
         string amount_str(to_string(amount));
+        string id_producer_str(to_string(id_producer));
     
-        string consulta = "INSERT INTO Products (name, brand, amount, presio, producer) VALUES (\""+name_str+"\",\""+brand_str+"\",\""+amount_str+"\","+presio_str+",\""+producer_str+"\")";
+        string consulta = "INSERT INTO Products (name, brand, amount, price, producer, id_producer) VALUES (\""+name_str+"\",\""+brand_str+"\",\""+amount_str+"\","+presio_str+",\""+producer_str+"\","+id_producer_str+")";
         
         if (!mysql_real_connect(CONN, HOSTNAME, USERNAME, PASSWORD, DATABASE, PORT, SOCKET, 0))
         {
@@ -203,7 +220,7 @@ int Connection::agregarProducto(char *name,char *brand,int amount, float presio,
     }
 }
 
-int Connection::actualizarProducto(int id, char *name,char *brand, int amount,float presio,char * producer){  // Función que se encarga de actualizar el estado de los productos
+int Connection::actualizarProducto(int id, char *name,char *brand, int amount,float presio,char * producer, int id_producer){  // Función que se encarga de actualizar el estado de los productos
     try
     {
        CONN = mysql_init(NULL);
@@ -214,8 +231,9 @@ int Connection::actualizarProducto(int id, char *name,char *brand, int amount,fl
         string producer_str(producer);
         string amount_str(to_string(amount));
         string id_str(to_string(id));
+        string id_producer_str(to_string(id_producer));
     
-        string consulta = "UPDATE Products SET name=\""+name_str+"\",brand =\""+brand_str+"\",amount ="+amount_str+",presio="+presio_str+",producer=\""+producer_str+"\" WHERE id="+id_str;
+        string consulta = "UPDATE Products SET name=\""+name_str+"\",brand =\""+brand_str+"\",amount ="+amount_str+",price="+presio_str+",producer=\""+producer_str+"\","+"id_producer="+id_producer_str+" WHERE id="+id_str;
         
         if (!mysql_real_connect(CONN, HOSTNAME, USERNAME, PASSWORD, DATABASE, PORT, SOCKET, 0))
         {
@@ -284,7 +302,7 @@ int main()
     try{
 
     Connection objConn;
-    int result = objConn.actualizarProducto(4,"Pasta Dental","Colgate",8,2500.4,"Colgate Corp");
+    int result = objConn.mostrarProductos();
     cout << result << endl; 
     if (!result) cout << "ERROR!!!!" <<endl;
 
